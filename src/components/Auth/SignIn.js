@@ -4,8 +4,11 @@ import styled from 'react-emotion'
 
 import Button from '../Forms/Button'
 import ProfileForm from '../Profile/ProfileForm'
-import { UpdateUserProfile, LoginUser } from '../../graphql/mutations'
-import { UserProfileQuery } from '../../graphql/queries'
+import { UPDATE_USER_PROFILE, LOGIN_USER } from '../../graphql/mutations'
+import {
+  USER_PROFILE_QUERY,
+  LEGAL_AGREEMENTS_QUERY
+} from '../../graphql/queries'
 import SafeMutation from '../SafeMutation'
 import SafeQuery from '../SafeQuery'
 import { GlobalConsumer } from '../../GlobalState'
@@ -16,8 +19,6 @@ import { SIGN_IN } from '../../modals'
 
 const SignInContainer = styled('div')``
 
-const FormDiv = styled('div')``
-
 const Pencil = styled(DefaultPencil)`
   margin-right: 10px;
 `
@@ -27,23 +28,32 @@ const H2 = styled(DefaultH2)`
   align-items: center;
 `
 
+const P = styled('p')`
+  white-space: nowrap;
+  margin-bottom: 10px;
+`
+
+const SignUpButtonDiv = styled('div')`
+  margin-top: 30px;
+`
+
 export default class SignIn extends Component {
   render() {
     return (
-      <SignInContainer>
+      <SignInContainer data-testid="sign-in-modal">
         <GlobalConsumer>
-          {({ userAddress, toggleModal }) => (
+          {({ userAddress, closeModal }) => (
             <SafeQuery
-              query={UserProfileQuery}
+              query={USER_PROFILE_QUERY}
               variables={{ address: userAddress }}
             >
               {result => {
                 const hasProfile = !!_.get(result, 'data.profile.username')
 
                 if (hasProfile) {
-                  return this.renderSignIn(userAddress, toggleModal)
+                  return this.renderSignIn(userAddress, closeModal)
                 } else {
-                  return this.renderSignUp(userAddress, toggleModal)
+                  return this.renderSignUp(userAddress, closeModal)
                 }
               }}
             </SafeQuery>
@@ -53,61 +63,85 @@ export default class SignIn extends Component {
     )
   }
 
-  renderSignUp(userAddress, toggleModal) {
+  renderSignUp(userAddress, closeModal) {
     return (
-      <FormDiv>
+      <>
         <H2>
           <Pencil />
           Create account
         </H2>
-        <ProfileForm
-          userAddress={userAddress}
-          renderSubmitButton={(profile, isValid) => (
-            <SafeMutation mutation={UpdateUserProfile} variables={{ profile }}>
-              {updateUserProfile =>
-                isValid ? (
-                  <RefreshAuthTokenButton
-                    onClick={this.signInOrSignUp({
-                      fetchUserProfileFromServer: updateUserProfile,
-                      toggleModal
-                    })}
-                    title="Create account"
-                  />
-                ) : (
-                  <Button type="disabled">Create account</Button>
-                )
-              }
-            </SafeMutation>
+        <SafeQuery query={LEGAL_AGREEMENTS_QUERY}>
+          {({ data: { legal: latestLegal } }) => (
+            <ProfileForm
+              userAddress={userAddress}
+              latestLegal={latestLegal}
+              renderSubmitButton={(isValid, prepareValuesFn) => (
+                <SafeMutation mutation={UPDATE_USER_PROFILE}>
+                  {updateUserProfile => (
+                    <SignUpButtonDiv>
+                      {isValid ? (
+                        <RefreshAuthTokenButton
+                          onClick={this.signInOrSignUp({
+                            prepareValuesFn,
+                            sendDataToServer: updateUserProfile,
+                            closeModal
+                          })}
+                          title="Create account"
+                        />
+                      ) : (
+                        <Button type="disabled">Create account</Button>
+                      )}
+                    </SignUpButtonDiv>
+                  )}
+                </SafeMutation>
+              )}
+            />
           )}
-        />
-      </FormDiv>
+        </SafeQuery>
+      </>
     )
   }
 
-  renderSignIn(userAddress, toggleModal) {
+  renderSignIn(userAddress, closeModal) {
     return (
-      <FormDiv>
+      <>
         <H2>Sign in</H2>
-        <div>{userAddress}</div>
-        <SafeMutation mutation={LoginUser}>
+        <P>Account detected: {userAddress}</P>
+        <SafeMutation mutation={LOGIN_USER}>
           {loginUser => (
             <RefreshAuthTokenButton
               onClick={this.signInOrSignUp({
-                fetchUserProfileFromServer: loginUser,
-                toggleModal
+                sendDataToServer: loginUser,
+                closeModal
               })}
             />
           )}
         </SafeMutation>
-      </FormDiv>
+      </>
     )
   }
 
   signInOrSignUp = ({
-    fetchUserProfileFromServer,
-    toggleModal
+    prepareValuesFn,
+    sendDataToServer,
+    closeModal
   }) => async refreshAuthToken => {
-    await refreshAuthToken({ fetchUserProfileFromServer })
-    toggleModal({ name: SIGN_IN })
+    const dataToSend = !prepareValuesFn
+      ? undefined
+      : {
+          variables: {
+            profile: prepareValuesFn()
+          }
+        }
+
+    await refreshAuthToken({
+      fetchUserProfileFromServer: () => sendDataToServer(dataToSend)
+    })
+
+    this.close(closeModal)
+  }
+
+  close = closeModal => {
+    closeModal({ name: SIGN_IN })
   }
 }

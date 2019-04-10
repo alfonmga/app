@@ -1,26 +1,26 @@
 import React, { Component } from 'react'
+import { Link } from 'react-router-dom'
 import styled from 'react-emotion'
-import {
-  PARTICIPANT_STATUS,
-  calculateFinalizeMaps,
-  calculateNumAttended
-} from '@wearekickback/shared'
+import { PARTICIPANT_STATUS, calculateNumAttended } from '@wearekickback/shared'
 import { toEthVal } from '../../utils/units'
 
 import DefaultRSVP from './RSVP'
-import ChainMutation, { ChainMutationButton } from '../ChainMutation'
 import WithdrawPayout from './WithdrawPayout'
 import {
   calculateWinningShare,
   getParticipantsMarkedAttended
 } from '../../utils/parties'
-import { PartyQuery } from '../../graphql/queries'
-import { Finalize } from '../../graphql/mutations'
 import Status, { Going } from './Status'
-import { GlobalConsumer } from '../../GlobalState'
-import Button from '../Forms/Button'
-import { CONFIRM_TRANSACTION } from '../../modals'
-import ConfirmModal from '../ConfirmModal'
+import DefaultButton from '../Forms/Button'
+
+const AdminPanelButtonWrapper = styled('div')``
+
+const Button = styled(DefaultButton)`
+  margin-bottom: 20px;
+  a {
+    color: white;
+  }
+`
 
 const CTA = styled('div')`
   font-family: Muli;
@@ -55,30 +55,14 @@ const RSVPContainer = styled('div')`
   justify-content: space-between;
   margin-bottom: 20px;
 `
-
-// const Deposit = styled('div')`
-//   font-family: Muli;
-//   font-weight: 500;
-//   font-size: 13px;
-//   color: #6e76ff;
-//   letter-spacing: 0;
-//   text-align: center;
-//   line-height: 21px;
-//   padding: 10px 20px;
-//   width: 100px;
-//   background: rgba(233, 234, 255, 0.5);
-//   border: 1px solid rgba(233, 234, 255, 0.5);
-//   border-radius: 4px;
-// `
+const Reference = styled('p')`
+  a {
+    text-decoration: underline;
+  }
+`
 
 const RSVP = styled(DefaultRSVP)`
   width: 100%;
-`
-
-const AdminCTA = styled('div')`
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
 `
 
 const MarkAttended = styled('div')``
@@ -128,20 +112,34 @@ class EventCTA extends Component {
           <>
             <RSVP address={address} deposit={deposit} />
             <CTAInfo>
-              <strong>You cannot cancel once registered.</strong>
-              <p>
-                Also, your payment is <strong>non-refundable</strong> if:
-              </p>
+              <strong>Kickback rules:</strong>
               <ul>
+                <li>Everyone commits a small amount of ETH when they RSVP.</li>
                 <li>
-                  You RSVP but then don't turn up in time (or don't get marked
-                  as attended by the organizer).
+                  Any no-shows lose their ETH, which will be
+                  <strong> split amongst the attendees</strong>.
                 </li>
                 <li>
-                  You fail to withdraw your post-event payout within the cooling
+                  After the event you can withdraw your post-event payout.
+                </li>
+              </ul>
+              <p>Please remember:</p>
+              <ul>
+                <li>Once you RSVP, you cannot cancel.</li>
+                <li>
+                  The event organiser must mark you as attended in order for you
+                  to qualify for the payout.
+                </li>
+                <li>
+                  You must withdraw your payout within the post-event cooling
                   period.
                 </li>
               </ul>
+              <Reference>
+                For more detail please see{' '}
+                <Link to="/gettingstarted">Getting started</Link> and{' '}
+                <Link to="/terms">Terms and conditions</Link>.
+              </Reference>
             </CTAInfo>
           </>
         )
@@ -162,68 +160,17 @@ class EventCTA extends Component {
 
   _renderAdminCTA() {
     const {
-      party: { address, participants, ended },
+      party: { address },
       amAdmin
     } = this.props
 
     return (
       amAdmin && (
-        <GlobalConsumer>
-          {({ toggleModal }) => {
-            return (
-              <AdminCTA>
-                {!ended ? (
-                  <>
-                    <Button
-                      onClick={() => {
-                        toggleModal({
-                          name: CONFIRM_TRANSACTION,
-                          render: () => (
-                            <ConfirmModal
-                              message="Finalizing enables payouts for all that have been marked attended. This can only be done once is irreversible, are you sure you want to finalize?"
-                              mutationComponent={
-                                <ChainMutation
-                                  mutation={Finalize}
-                                  resultKey="finalize"
-                                  variables={{
-                                    address,
-                                    maps: calculateFinalizeMaps(participants)
-                                  }}
-                                  refetchQueries={[
-                                    {
-                                      query: PartyQuery,
-                                      variables: {
-                                        address
-                                      }
-                                    }
-                                  ]}
-                                >
-                                  {(finalize, result) => (
-                                    <ChainMutationButton
-                                      analyticsId="Finalize Event"
-                                      result={result}
-                                      onClick={finalize}
-                                      preContent="Finalize and enable payouts"
-                                      postContent="Finalized!"
-                                    />
-                                  )}
-                                </ChainMutation>
-                              }
-                            >
-                              rendering
-                            </ConfirmModal>
-                          )
-                        })
-                      }}
-                    >
-                      Finalize
-                    </Button>
-                  </>
-                ) : null}
-              </AdminCTA>
-            )
-          }}
-        </GlobalConsumer>
+        <AdminPanelButtonWrapper>
+          <Button>
+            <Link to={`/event/${address}/admin`}>Admin Panel</Link>
+          </Button>
+        </AdminPanelButtonWrapper>
       )
     )
   }
@@ -246,11 +193,13 @@ class EventCTA extends Component {
     const numWent = calculateNumAttended(participants)
 
     return (
-      <CTA>
-        This event is over. {numWent} out of {totalReg} people went to this
-        event.
+      <>
         {this._renderAdminCTA()}
-      </CTA>
+        <CTA>
+          This event is over. {numWent} out of {totalReg} people went to this
+          event.
+        </CTA>
+      </>
     )
   }
 

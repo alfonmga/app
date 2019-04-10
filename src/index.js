@@ -2,16 +2,19 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { ApolloProvider } from 'react-apollo'
 
+import { setup as setupLogRocket } from './api/logRocket'
+import { setup as setupRollbar } from './api/rollbar'
 import { setup as setupAnalytics } from './api/analytics'
 import './index.css'
 import App from './App'
-import registerServiceWorker from './registerServiceWorker'
 import { clientInstance } from './graphql'
 import setupWeb3 from './api/web3'
 import { GlobalProvider } from './GlobalState'
 import './globalStyles'
 
 window.addEventListener('load', async () => {
+  setupRollbar()
+  setupLogRocket()
   setupAnalytics()
 
   setupWeb3().catch(_ => {})
@@ -25,5 +28,3 @@ window.addEventListener('load', async () => {
     document.getElementById('root')
   )
 })
-
-registerServiceWorker()

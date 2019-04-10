@@ -92,7 +92,6 @@ const resolvers = {
       const participants = await Promise.all(participantsRaw).then(
         participantsRaw =>
           participantsRaw.map(arr => {
-            console.log(arr)
             return {
               participantName: arr.participantName,
               address: arr.addr,
@@ -151,7 +150,6 @@ const resolvers = {
           from: account,
           value: deposit
         })
-
         return tx
       } catch (err) {
         console.error(err)
@@ -196,6 +194,7 @@ const resolvers = {
     async setLimitOfParticipants(_, { address, limit }) {
       const web3 = await getWeb3()
       const account = await getAccount()
+      console.log(address)
       const { methods: contract } = new web3.eth.Contract(abi, address)
       try {
         const tx = await contract

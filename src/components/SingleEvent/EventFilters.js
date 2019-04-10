@@ -2,7 +2,7 @@ import { ApolloConsumer } from 'react-apollo'
 import React, { Component } from 'react'
 import styled from 'react-emotion'
 
-import { QRSupportedQuery, QRQuery } from '../../graphql/queries'
+import { QR_SUPPORTED_QUERY, QR_QUERY } from '../../graphql/queries'
 
 import Button from '../Forms/Button'
 import ErrorBox from '../ErrorBox'
@@ -20,6 +20,8 @@ const Filter = styled('div')`
   margin-bottom: 20px;
 `
 
+const EventFiltersContainer = styled('div')``
+
 class EventFilters extends Component {
   state = {}
 
@@ -27,7 +29,7 @@ class EventFilters extends Component {
     this.setState({ scanError: null }, async () => {
       try {
         const { error, data = {} } = await client.query({
-          query: QRQuery,
+          query: QR_QUERY,
           fetchPolicy: 'no-cache'
         })
 
@@ -44,8 +46,8 @@ class EventFilters extends Component {
     })
   }
 
-  _onSearch = event => {
-    this.props.handleSearch(event.target.value)
+  _onSearch = val => {
+    this.props.handleSearch(val)
   }
 
   render() {
@@ -54,12 +56,13 @@ class EventFilters extends Component {
       enableQrCodeScanner,
       handleFilterChange,
       amAdmin,
-      ended
+      ended,
+      className
     } = this.props
     const { scanError } = this.state
 
     return (
-      <EventFiltersContainer>
+      <EventFiltersContainer className={className}>
         {amAdmin && !ended && (
           <Filter>
             <Label>Filters</Label>
@@ -81,13 +84,13 @@ class EventFilters extends Component {
         <Search
           type="text"
           Icon={SearchIcon}
-          onChange={this._onSearch}
+          onChangeText={this._onSearch}
           value={search}
           placeholder="Search for names or addresses"
           wide
         />
         {enableQrCodeScanner ? (
-          <SafeQuery query={QRSupportedQuery}>
+          <SafeQuery query={QR_SUPPORTED_QUERY}>
             {({ data = {} }) => {
               return data.supported ? (
                 <ApolloConsumer>
@@ -106,7 +109,5 @@ class EventFilters extends Component {
     )
   }
 }
-
-const EventFiltersContainer = styled('div')``
 
 export default EventFilters

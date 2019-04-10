@@ -1,8 +1,17 @@
 import React, { Component } from 'react'
+import styled from 'react-emotion'
 import { withRouter } from 'react-router-dom'
+import TextInput from '../components/Forms/TextInput'
+import Label from '../components/Forms/Label'
 
 import PartyForm from '../components/SingleEvent/Admin/PartyForm'
-import { CreatePendingParty } from '../graphql/mutations'
+import { CREATE_PENDING_PARTY } from '../graphql/mutations'
+
+const CreateContainer = styled('div')`
+  display: flex;
+  max-width: 800px;
+  flex-direction: column;
+`
 
 class Create extends Component {
   state = {
@@ -13,23 +22,20 @@ class Create extends Component {
     const { password } = this.state
 
     return (
-      <>
-        <h1>Create a new party</h1>
+      <CreateContainer>
         <PartyForm
           onCompleted={this._onCreated}
-          mutation={CreatePendingParty}
+          mutation={CREATE_PENDING_PARTY}
           variables={{ password }}
         >
-          <p>
-            <label>SECRET PASSWORD:</label>
-            <input
-              value={password}
-              onChange={e => this.setState({ password: e.target.value })}
-              type="password"
-            />
-          </p>
+          <Label>SECRET PASSWORD:</Label>
+          <TextInput
+            value={password}
+            onChangeText={val => this.setState({ password: val })}
+            type="password"
+          />
         </PartyForm>
-      </>
+      </CreateContainer>
     )
   }
 

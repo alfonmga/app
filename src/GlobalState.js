@@ -3,13 +3,16 @@ import React, { createContext, Component } from 'react'
 import { withApollo } from 'react-apollo'
 import jwt from 'jsonwebtoken'
 
+import { identify as logRocketIdentify } from './api/logRocket'
 import * as LocalStorage from './api/localStorage'
 import { getAccount } from './api/web3'
 import { SIGN_IN } from './modals'
-import { LoginUserNoAuth } from './graphql/mutations'
+import { LOGIN_USER_NO_AUTH } from './graphql/mutations'
 import { buildAuthHeaders } from './utils/requests'
 
 const GlobalContext = createContext({})
+
+export default GlobalContext
 
 export const GlobalConsumer = GlobalContext.Consumer
 
@@ -74,7 +77,7 @@ class Provider extends Component {
       const {
         data: { profile }
       } = await this.apolloClient().mutate({
-        mutation: LoginUserNoAuth,
+        mutation: LOGIN_USER_NO_AUTH,
         context: {
           headers: buildAuthHeaders(token)
         }
@@ -107,6 +110,8 @@ class Provider extends Component {
 
   setUserProfile = profile => {
     console.log('Current user', profile)
+
+    logRocketIdentify(profile)
 
     this.setState(
       state => ({
@@ -147,12 +152,16 @@ class Provider extends Component {
     })
   }
 
-  toggleModal = modal => {
-    this.setState(state =>
-      state.currentModal && state.currentModal.name === modal.name
-        ? { currentModal: null }
-        : { currentModal: modal }
-    )
+  closeModal = modal => {
+    this.setState(state => {
+      if (state.currentModal && state.currentModal.name === modal.name) {
+        return {
+          currentModal: null
+        }
+      } else {
+        return state
+      }
+    })
   }
 
   async componentDidMount() {
@@ -192,17 +201,17 @@ class Provider extends Component {
     return (
       <GlobalContext.Provider
         value={{
+          apolloClient: this.apolloClient(),
           currentModal: this.state.currentModal,
           userAddress: this.state.auth.address,
           reloadUserAddress: this.reloadUserAddress,
           userProfile: this.state.auth.profile,
           networkState: this.state.networkState,
           loggedIn: this.isLoggedIn(),
-          toggleModal: this.toggleModal,
-
           signIn: this.signIn,
           signInError: this.state.signInError,
           showModal: this.showModal,
+          closeModal: this.closeModal,
           setAuthTokenFromSignature: this.setAuthTokenFromSignature,
           setUserProfile: this.setUserProfile
         }}

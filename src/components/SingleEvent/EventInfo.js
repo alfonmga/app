@@ -2,19 +2,23 @@ import React, { Component } from 'react'
 import styled from 'react-emotion'
 import { HashLink as DefaultHashLink } from 'react-router-hash-link'
 
+import { extractUsersWithGivenEventRole, ROLE } from '@wearekickback/shared'
+import marked from 'marked'
+
 import EtherScanLink from '../ExternalLinks/EtherScanLink'
 import { H2, H3 } from '../Typography/Basic'
 import TwitterAvatar from '../User/TwitterAvatar'
 import DepositValue from '../Utils/DepositValue'
 import { ReactComponent as DefaultEthIcon } from '../svg/Ethereum.svg'
+import DefaultEventDate from '../Utils/EventDate'
 import { ReactComponent as DefaultPinIcon } from '../svg/Pin.svg'
 import { ReactComponent as DefaultInfoIcon } from '../svg/info.svg'
-import moment from 'moment'
-// import Tooltip from '../Tooltip/Tooltip'
 
+import moment from 'moment'
 import { toEthVal } from '../../utils/units'
 
-const Date = styled('div')``
+const EventDate = styled(DefaultEventDate)``
+
 const EventName = styled(H2)``
 const ContractAddress = styled('h3')`
   overflow: hidden;
@@ -116,9 +120,12 @@ const TotalPot = styled('div')`
   }
 `
 
-const EventDescription = styled('p')`
-  white-space: pre-line;
+const EventDescription = styled('div')`
   line-height: 1.6em;
+  padding-top: 2em;
+  p {
+    margin: 0 0 1em 0;
+  }
 `
 
 const UserAvatar = styled(TwitterAvatar)`
@@ -138,22 +145,27 @@ const HostUsername = styled('span')`
 class EventInfo extends Component {
   render() {
     const { party, address, className } = this.props
+
+    const admins = extractUsersWithGivenEventRole(party, ROLE.EVENT_ADMIN)
+
     return (
       <EventInfoContainer className={className}>
-        <Date>{party.date || 'Tuesday, 23rd Sep, 2018 9:00 PM'}</Date>
+        <EventDate event={party} />
         <EventName>{party.name}</EventName>
         <ContractAddress>
           <EtherScanLink address={address}>{address}</EtherScanLink>
         </ContractAddress>
-        <EventImage src={party.image || 'https://placeimg.com/640/480/tech'} />
+        <EventImage
+          src={party.headerImg || 'https://placeimg.com/640/480/tech'}
+        />
         <Organisers>
           <H3>Organisers</H3>
           <OrganiserList>
-            {[party.owner, ...party.admins].map(organiser => {
+            {admins.map(user => {
               return (
-                <Organiser key={organiser.username}>
-                  <UserAvatar user={organiser} />
-                  <HostUsername>{organiser.username}</HostUsername>
+                <Organiser key={user.username}>
+                  <UserAvatar user={user} />
+                  <HostUsername>{user.username}</HostUsername>
                 </Organiser>
               )
             })}
@@ -181,7 +193,7 @@ class EventInfo extends Component {
             <Deposit>
               <strong>RSVP: </strong>
               <span>
-                <DepositValue value={party.deposit} /> ETH
+                <DepositValue value={party.deposit} />
               </span>
             </Deposit>
           </Pot>
@@ -200,7 +212,9 @@ class EventInfo extends Component {
             days
           </span>
         </TotalPot>
-        <EventDescription>{party.description}</EventDescription>
+        <EventDescription
+          dangerouslySetInnerHTML={{ __html: marked(party.description || '') }}
+        />
         <Photos>
           <PhotoContainer>
             <Photo />

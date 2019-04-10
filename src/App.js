@@ -15,12 +15,13 @@ import CreatePendingEvent from './routes/CreatePendingEvent'
 import DeployPendingEvent from './routes/DeployPendingEvent'
 import SingleEvent from './routes/SingleEvent'
 import SingleEventAdmin from './routes/SingleEventAdmin'
-import ParticipantTableList from './routes/ParticipantTableList'
 import LandingPage from './routes/LandingPage'
 import Team from './routes/Team'
 import Faq from './routes/Faq'
 import Privacy from './routes/Privacy'
+import Pricing from './routes/Pricing'
 import Terms from './routes/Terms'
+import GettingStarted from './routes/GettingStarted'
 import ScrollToTop from './components/ScrollToTop'
 import Modal from './components/Modal/Modal'
 import SignIn from './components/Auth/SignIn'
@@ -65,25 +66,22 @@ class App extends Component {
               <Route exact path="/event/:address" component={SingleEvent} />
               <Route
                 path="/event/:address/admin"
-                exact
                 component={SingleEventAdmin}
-              />
-              <Route
-                path="/event/:address/admin/list"
-                component={ParticipantTableList}
               />
               <Route path="/create" component={CreatePendingEvent} />
               <Route path="/deploy" component={DeployPendingEvent} />
               <Route path="/faq" component={Faq} />
               <Route path="/terms" component={Terms} />
               <Route path="/privacy" component={Privacy} />
+              <Route path="/pricing" component={Pricing} />
               <Route path="/team" component={Team} />
+              <Route path="/gettingstarted" component={GettingStarted} />
             </Switch>
+            <Modal name={SIGN_IN} component={SignIn} />
+            <Modal name={EDIT_PROFILE} component={EditProfile} />
+            <Modal small name={CONFIRM_TRANSACTION} />
           </ScrollToTop>
         </Router>
-        <Modal name={SIGN_IN} component={SignIn} />
-        <Modal name={EDIT_PROFILE} component={EditProfile} />
-        <Modal small name={CONFIRM_TRANSACTION} />
       </Fragment>
     )
   }
